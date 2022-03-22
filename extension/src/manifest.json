@@ -1,6 +1,6 @@
 {
-  "name": "Salmon",
-  "description": "Salmon Solana Wallet",
+  "name": "Salmon Wallet",
+  "description": "Salmon is an open source Solana wallet. Send and receive tokens. Check your NFTs",
   "version": "0.0.1",
   "action": {
     "default_popup": "index.html",
