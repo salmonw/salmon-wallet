@@ -12,10 +12,10 @@ function launchPopup(message, sender, sendResponse) {
     chrome.windows.create({
       url: 'index.html#' + searchParams.toString(),
       type: 'popup',
-      width: 375,
+      width: 450,
       height: 600,
       top: focusedWindow.top,
-      left: focusedWindow.left + (focusedWindow.width - 375),
+      left: focusedWindow.left + (focusedWindow.width - 450),
       setSelfAsOpener: true,
       focused: true,
     });

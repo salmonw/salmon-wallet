@@ -34,7 +34,7 @@ import './login-page.css';
 
 const styles = ({
   welcomeCard: {
-    width : '80%',
+    width : '50%',
     margin: '40px auto',    
   },
   button: {
@@ -68,9 +68,11 @@ export default function WelcomePage() {
   const [restore, setRestore] = useState(false);
   const [hasLockedMnemonicAndSeed, loading] = useHasLockedMnemonicAndSeed();
 
+  /*
   if (loading) {
     return null;
   }
+  */
 
   return (
     <Container maxWidth="xs">
@@ -98,7 +100,7 @@ function WelcomeForm() {
   if(!createWallet)
     return (
       <Card>
-        <Box px={8} py={14}>        
+        <Box px={8} py={8}>        
           <Box px={4} py={1}>
             <CardMedia style={styles.welcomeCard} image="images/logo.png" component="img"/>      
           </Box>

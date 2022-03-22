@@ -117,7 +117,7 @@ function NavigationButtons() {
 
 function ExpandButton() {
   const onClick = () => {
-    window.open(chrome.extension.getURL('index.html'), '_blank');
+    window.open('index.html', '_blank');
   };
 
   return (

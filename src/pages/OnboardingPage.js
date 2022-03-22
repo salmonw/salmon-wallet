@@ -9,7 +9,7 @@ import NftPage from './NftPage';
 
 const styles = ({
   welcomeCard: {
-    width : '80%',
+    width : '50%',
     margin: '40px auto',    
   },
   textContainer: {
@@ -74,6 +74,7 @@ export default function OnboardingPage() {
   ]
 
   if(nft){
+    console.log("nft:" + nft);
     return (
       <NftPage/>
     )
@@ -83,22 +84,25 @@ export default function OnboardingPage() {
     return (<WelcomePage/>)
 
   if(step >= 3){
+    console.log("Step:" + step);
     return (
       <WelcomePage/>
     )
   }
 
   if(skip){
+    console.log("skip:" + skip);
     return (
       <WelcomePage/>
     )
   }
 
   if(step < 3){
+    console.log("Step:" + step);
     return (
       <Container maxWidth="xs">
         <Card>
-          <Box px={2} py={6}>
+          <Box px={2} py={3}>
             <Box align="right" py={1}>
               <Button style={styles.buttonSkip} align="right" variant="text" color="primary" px={5} onClick={() => setSkip(true)}>
                 Skip
@@ -118,14 +122,14 @@ export default function OnboardingPage() {
           />
 
 
-            <Box py={3} px={5}>    
-              <Typography variant="h1">{text[step].title}</Typography>
+            <Box py={2} px={2}>    
+              <Typography style={{fontSize: "26px"}} variant="h1">{text[step].title}</Typography>
             </Box>
-            <Box pb={2} px={4} style={styles.text}>    
+            <Box py={2} px={4} style={styles.text}>    
               <Typography align='center' variant="paragraph">{text[step].paragraph}</Typography>
             </Box>
           
-            <Box align="center" p={4}>
+            <Box align="center" py={1}>
               <Button style={styles.button} variant="outlined" color="primary" px={5} onClick={() => setStep(step+1)}>
                 Next
               </Button>
