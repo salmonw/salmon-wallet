@@ -30,6 +30,7 @@ import { PageProvider, usePage } from './utils/page';
 export default function App() {
   // TODO: add toggle for dark mode
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
+
   const lightTheme = React.useMemo(
     () =>
       createMuiTheme({

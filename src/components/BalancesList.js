@@ -66,6 +66,7 @@ import DnsIcon from '@material-ui/icons/Dns';
 import DomainsList from './DomainsList';
 import {actionButtons} from './styles/buttons'
 import NftPage from '../pages/NftPage';
+import SwapPage from '../pages/SwapPage';
 
 
 
@@ -127,6 +128,7 @@ export default function BalancesList() {
   const selectedAccount = accounts.find((a) => a.isSelected);
   const allTokensLoaded = loaded && fairsIsLoaded(publicKeys);
   const [nft, setNft] = useState(false);
+  const [swap, setSwap] = useState(false);
   let sortedPublicKeys = publicKeys;
   if (allTokensLoaded && sortAccounts !== SortAccounts.None) {
     sortedPublicKeys = [...publicKeys];
@@ -219,6 +221,12 @@ export default function BalancesList() {
     )
   }
 
+  if(swap){
+    return (
+      <SwapPage/>
+    )
+  }
+
   return (
     <>
     <Paper style={{ display: allTokensLoaded ? "block" : "none" }}>
@@ -296,6 +304,19 @@ export default function BalancesList() {
               </Button>            
             </Tooltip>
             <Typography style={actionButtons.buttonText}>NFT</Typography>       
+          </Box>
+          <Box mx={2} align="center">
+            <Tooltip title="Swap" arrow>
+              <Button 
+                style={actionButtons.button} 
+                variant="contained" 
+                color="primary"                           
+                onClick={() => {setSwap(true)}}
+              >
+                <LayersIcon />
+              </Button>            
+            </Tooltip>
+            <Typography style={actionButtons.buttonText}>Swap</Typography>       
           </Box>
 
         </Box>

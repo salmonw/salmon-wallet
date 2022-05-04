@@ -1,1 +1,6 @@
+## prod
 aws s3 cp build s3://salmon-token-wallet/ --recursive
+
+## dev
+
+aws s3 cp build s3://salmon-wallet-dev/ --recursive
