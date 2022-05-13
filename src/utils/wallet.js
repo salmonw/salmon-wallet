@@ -70,6 +70,19 @@ export class Wallet {
       );
   };
 
+
+  getTokenAmount = async (token) => {               
+    try {
+      const response = await this.connection.getParsedTokenAccountsByOwner(this.publicKey,
+        {mint: new PublicKey(token)}          
+      ) 
+      return response.value[0].account.data.parsed.info.tokenAmount;
+    } catch(error) {
+      console.log(error);
+      return null;
+    }
+  }
+
   createTokenAccount = async (tokenAddress) => {
     return await createAndInitializeTokenAccount({
       connection: this.connection,

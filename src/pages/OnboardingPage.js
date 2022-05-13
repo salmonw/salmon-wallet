@@ -97,8 +97,7 @@ export default function OnboardingPage() {
     )
   }
 
-  if(step < 3){
-    console.log("Step:" + step);
+  if(step < 3){    
     return (
       <Container maxWidth="xs">
         <Card>

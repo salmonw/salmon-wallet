@@ -20,8 +20,15 @@ import {
 } from '@material-ui/core';
 import {  
   useWallet,
-  useBalanceInfo  
+  useWalletTokenAccounts
 } from '../utils/wallet';
+import {  
+  refreshAccountInfo,  
+} from '../utils/connection';
+import {
+  WRAPPED_SOL_MINT,
+  USDC_MINT
+} from '../utils/tokens/instructions';
 import BalancesList from '../components/BalancesList';
 import { useIsExtensionWidth } from '../utils/utils';
 import internal from 'stream';
@@ -30,6 +37,7 @@ import SearchIcon from '@material-ui/icons/Search';
 import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
 import { refreshCache, useAsyncData } from '../utils/fetch-loop';
 import { PublicKey } from '@solana/web3.js';
+import { serumMarkets, priceStore } from '../utils/markets';
 
 
 
@@ -49,7 +57,8 @@ const styles = {
   },
   tokenListItem: {
     listStyleType: "none",
-    margin: "10px 0"
+    margin: "10px 0",
+    cursor: "pointer"
   },
   tokenListImage: {
     width: "20px",
@@ -97,9 +106,9 @@ const styles = {
   }
 }
 
-//const connection = new Connection('https://solana-api.projectserum.com');
+const connection = new Connection('https://solana-api.projectserum.com');
 //const connection = new Connection('https://ssc-dao.genesysgo.net');
-const connection = new Connection('https://api.mainnet-beta.solana.com');
+//const connection = new Connection('https://api.mainnet-beta.solana.com');
 const QUOTE_DURATION = 10;
 //const SALMON_API_URL = "https://xw314040mf.execute-api.us-east-1.amazonaws.com/develop";
 const SALMON_API_URL = "http://localhost:3000/local";
@@ -119,7 +128,7 @@ const applyOutputDecimals = (amount, address, tokens) => {
 
 export default function SwapPage() {
   const [tokens, setTokens] = useState();    
-  const [quoteRequest, setQuoteRequest] = useState(null);
+  const [quoteRequest, setQuoteRequest] = useState(null);  
   const [route, setRoute] = useState(null);
   const [loadingQuote, setLoadingQuote] = useState(null);
   const [loadingSwap, setLoadingSwap] = useState(false);  
@@ -128,9 +137,47 @@ export default function SwapPage() {
   const [counter, setCounter] = useState(0);  
   const [success, setSuccess] = useState(false); 
   const [txid, setTxid] = useState(null);
+  const [ownedTokens, setOwnedTokens] = useState(null);
+  const [refeshForm, setRefreshForm] = useState(false);
   const wallet = useWallet();
+  const walletAccounts = useWalletTokenAccounts();
 
 
+  useEffect(() => {
+    async function fetchOwnedTokens() {
+      if(tokens && walletAccounts && !ownedTokens){        
+        const keys = [
+          USDC_MINT.toBase58(),
+          WRAPPED_SOL_MINT.toBase58(),
+          ...walletAccounts[0].map((w) => w.parsed.mint.toBase58())
+        ];        
+        const result = await Promise.all(
+          keys.map(async (tokenKey) => {                         
+            const {value, label, image,} = tokens.find(token => token.value === tokenKey);                                    
+            return {value, label, image};      
+          })
+        )
+        setOwnedTokens(result);        
+      }
+    }
+    fetchOwnedTokens();
+  }, [tokens, walletAccounts])
+  
+
+  //console.log(ownedTokens[0].map((t) => t.parsed.mint.toBase58()));
+
+
+  useEffect(() => {
+    async function fetchTokens() {
+      fetch(`${SALMON_API_URL}/v1/tokens`)
+      .then(response => response.json())      
+      .then(response => response.map((item) => { return item ? {"value" : item.address, "label": item.symbol, "image" : item.logoURI, "decimals": item.decimals} : {} }))
+      .then(result => {
+        setTokens(result);
+      })
+    }
+    fetchTokens();    
+  }, [])  
 
   useEffect(() => {    
     if(counter > 0) {
@@ -139,18 +186,22 @@ export default function SwapPage() {
     }
   }, [counter]);
 
-  useEffect(() => {    
+  const cleanAll = () => {
+    setLoadingQuote(false);
+    setLoadingSwap(false);
     setRoute(null);
-    setLoadingQuote(false);    
-  }, [quoteRequest]);
+    setError(null);
+  }
 
+  const updateQuoteRequest = (newValue) => {
+    setQuoteRequest(newValue);
+    cleanAll();
+  }
 
   const quote = async(quoteRequest) => {
-    const {inToken, outToken, amount} = quoteRequest;
-    setRoute(null);
+    const {inToken, outToken, amount, maxAmount} = quoteRequest;
+    cleanAll();
     setLoadingQuote(true);
-    setError(null);
-    setSuccess(false);
     const inputAmount = applyInputDecimals(amount, inToken.value, tokens);
     const response = await fetch(`${SALMON_API_URL}/v1/swap/quote?inputMint=${inToken.value}&outputMint=${outToken.value}&amount=${inputAmount}&slippage=0.5`);          
     const data = await response.json();       
@@ -184,9 +235,9 @@ export default function SwapPage() {
         console.log("Simulation result: " + JSON.stringify(simulation));      
         
         /*const response = await connection.confirmTransaction(txid); */
-        setLoadingSwap(false);
-        setSuccess(true);
-        setRoute(null);
+        cleanAll();
+        refreshAccountInfo(connection, wallet.publicKey, true);
+        setSuccess(true);                        
 
       } catch (error) {
         setLoadingSwap(false);
@@ -200,18 +251,6 @@ export default function SwapPage() {
     }
 
   }
-
-  useEffect(() => {
-    async function fetchTokens() {
-      fetch(`${SALMON_API_URL}/v1/tokens`)
-      .then(response => response.json())      
-      .then(response => response.map((item) => { return item ? {"value" : item.address, "label": item.symbol, "image" : item.logoURI, "decimals": item.decimals} : {} }))
-      .then(result => {
-        setTokens(result);
-      })
-    }
-    fetchTokens();    
-  }, [])
 
   if(back){
     return <BalancesList/>
@@ -230,8 +269,17 @@ export default function SwapPage() {
           <div>
             {tokens 
               && <div>
-                <AmountForm tokens={tokens} update={setQuoteRequest}></AmountForm>
-                
+                {!success && 
+                  <>
+                    <AmountForm tokens={tokens} ownedTokens={ownedTokens} update={updateQuoteRequest} success={success}></AmountForm>    
+                    {quoteRequest && quoteRequest.amount > 0 && !loadingQuote && !route
+                      &&
+                      <Box align="center" px={3} mb={1}>
+                        <Button variant="contained" color="primary" disabled={quoteRequest.amount > quoteRequest.maxAmount} onClick={() => quote(quoteRequest)}>Preview conversion</Button>  
+                      </Box>                  
+                    }
+                  </>                        
+                }
                 {loadingQuote 
                   && <Box align="center" style={styles.quoteGroup}>
                     <Typography>Finding best price</Typography>
@@ -244,40 +292,33 @@ export default function SwapPage() {
                   && <ShowSwap route={route} quoteRequest={quoteRequest} tokens={tokens}></ShowSwap>
                 }
                 
-                {route
+                {route && !loadingSwap
                   && 
                   <>                    
-                    <Route route={route} quoteRequest={quoteRequest} tokens={tokens}></Route>                    
-                    { !loadingSwap &&
-                      <Box align="center" mb={1}> 
-                        {counter == 0 && <Box mb={1}><Typography style={{fontSize: "12px",fontWeight: "500", color: "red"}} variant="caption">Quote Expired. Please request a new quote.</Typography></Box>}
-                        { counter > 0
-                          ? <Button variant="contained" color="primary" onClick={() => swap(route.id)}>Swap ({counter})</Button>  
-                          : <Button variant="contained" color="secondary" onClick={() => quote(quoteRequest)}>Refresh</Button>  
-                        }
-                        {loadingSwap}
-                      </Box>
-                    }
+                    <Route route={route} quoteRequest={quoteRequest} tokens={tokens}></Route>                                      
+                    <Box align="center" mb={1}> 
+                      {counter == 0 && <Box mb={1}><Typography style={{fontSize: "12px",fontWeight: "500", color: "red"}} variant="caption">Quote Expired. Please request a new quote.</Typography></Box>}
+                      { counter > 0
+                        ? <Button variant="contained" color="primary" onClick={() => swap(route.id)}>Swap ({counter})</Button>  
+                        : <Button variant="contained" color="secondary" onClick={() => quote(quoteRequest)}>Refresh</Button>  
+                      }                        
+                    </Box>                    
                   </>                              
-                }   
-
-                {quoteRequest?.amount && !loadingQuote && !route
-                  &&
-                  <Box align="center" px={3} mb={1}>
-                    <Button variant="contained" color="primary" onClick={() => quote(quoteRequest)}>Preview conversion</Button>  
-                  </Box>
-                }    
+                }     
 
                 {error
                   && <Box align="center" style={styles.quoteGroup}>
                     <Typography>Could not verify transaction. Please verify at <Link href={`https://solscan.io/tx/${error.txid}`} target='_blank'>solscan</Link></Typography>                    
                   </Box>
                 }
-
-                {success
-                  && <Box align="center" style={styles.quoteGroup}>
-                    <Typography>Transaction succesfull. Please verify at <Link href={`https://solscan.io/tx/${txid}`} target='_blank'>solscan</Link></Typography>                    
-                  </Box>
+            
+                {success &&
+                  <Box py={2} align="center">
+                    <Box align="center" style={styles.quoteGroup}>
+                      <Typography>Transaction succesfull. Please verify at <Link href={`https://solscan.io/tx/${txid}`} target='_blank'>solscan</Link></Typography>                    
+                    </Box>
+                    <Button variant="outlined" color="primary" onClick={() => {setRefreshForm(true); cleanAll(); setSuccess(false)}}>Continue</Button>        
+                  </Box> 
                 }         
               </div>            
             }
@@ -294,48 +335,83 @@ export default function SwapPage() {
 
 }
 
-function AmountForm({tokens, update}){
+function AmountForm({tokens, ownedTokens, update, refresh}){
   const [amount, setAmount] = useState(null);
   const [inToken, setInToken] = useState(null);
   const [outToken, setOutToken] = useState(null);
+  const [maxAmount, setMaxAmount] = useState(null);
+  const wallet = useWallet();
 
   useEffect(() => {
-    if(tokens){
-      setInToken(getTokenByAddress("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", tokens));  
-      setOutToken(getTokenByAddress("So11111111111111111111111111111111111111112", tokens));        
+    if(tokens || refresh){      
+      setInToken(getTokenByAddress(USDC_MINT.toBase58(), tokens));  
+      setOutToken(getTokenByAddress(WRAPPED_SOL_MINT.toBase58(), tokens));      
+      setAmount(0);
+      update({inToken, outToken, amount});
     }
-  }, tokens);
+  }, [tokens, refresh]);
 
-  const handleInToken = (token) => {
+  useEffect(() => {
+    async function fetchAccountInfo() {
+      if(inToken){        
+        setMaxAmount(null);
+        const data = await wallet.getTokenAmount(inToken.value);                
+        const uiAmount = data?data.uiAmount:0;
+        setMaxAmount(uiAmount);
+        update({inToken,outToken,amount,uiAmount})        
+      }
+    }
+    fetchAccountInfo();    
+  }, [inToken])
+
+  const handleInToken = (token) => {    
     setInToken(token);
-    update({inToken,outToken,amount})
+    setAmount(0);
+    console.log(amount);
+    update({inToken: token,outToken,amount : 0, maxAmount})
   };
-  const handleOutToken = (token) => {
+  const handleOutToken = (token) => {    
     setOutToken(token);
-    update({inToken,outToken,amount})
+    update({inToken,outToken: token,amount, maxAmount})
 
   };
   const handleAmount = (amount) => {
     setAmount(amount);
-    update({inToken,outToken,amount})
-
+    update({inToken,outToken,amount, maxAmount})
   };
+
+  const noAmount = !amount || amount == 0;
+
   return (
-    <Box>
+    <Box py={2}>
       <Grid container spacing={2} style={styles.inputGroup}>
-        <Grid item xs="7">
-          <TokenList callback={handleInToken}  tokens={tokens} current={inToken}></TokenList>
+        <Grid item xs="12" align="right">
+          {maxAmount !== null 
+            ? <span style={{fontSize: 10, color: "#FF855F"}}>Import available {maxAmount} {inToken?.label}</span>
+            : <span style={{fontSize: 10, color: "white"}}>Loading balance...</span>
+          }
         </Grid>
         <Grid item xs="5">
-          <input name="amount" onChange={e => handleAmount(e.target.value)} value={amount} autoComplete="off" placeholder="0.00" style={styles.inputText}/>
-        </Grid>                  
+          <TokenList callback={handleInToken}  tokens={ownedTokens} current={inToken}></TokenList>
+        </Grid>
+        <Grid item xs="3">
+          <Button size="small" variant="text" color="secondary" onClick={() => handleAmount(maxAmount)}>MAX</Button>
+        </Grid>
+        <Grid item xs="4">
+          <input name="amount" onChange={e => handleAmount(e.target.value)} value={amount} autoComplete="off" placeholder="0.00" style={styles.inputText}/>          
+        </Grid>   
+        <Grid item xs="12" align="right">
+          {amount > maxAmount 
+            && <span style={{fontSize: 10, color: "red"}}>Insufficient funds</span>
+          }
+        </Grid>               
       </Grid>
       <Grid container spacing={2} style={styles.inputGroup}>
         <Grid item xs="12">
           <TokenList callback={handleOutToken}  tokens={tokens} current={outToken}></TokenList>
         </Grid>
       </Grid>
-      {!amount 
+      { noAmount
         &&
         <Box align="center" px={3} mb={1}><Chip style={{width:"100%"}} label="Enter an amount" disabled /></Box>
       }
@@ -350,9 +426,10 @@ function ShowSwap({route, quoteRequest, tokens}){
   const inAmount = applyOutputDecimals(route.inAmount, inToken.value, tokens);
   return (
     <Grid container spacing={2} style={styles.quoteGroup}>
-      <Grid item xs="12">
-        <div align='center'><span>Sending Transaction</span></div>
-        <CircularProgress disableShrink/>
+      <Grid align="center" item xs="12">
+        <Typography>Sending transaction</Typography>
+        <br/>
+        <CircularProgress  disableShrink/>
       </Grid>
       <Grid item xs="6"> 
         <div><Typography>You are sending</Typography></div> 

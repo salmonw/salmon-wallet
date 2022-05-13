@@ -36,6 +36,7 @@ import EditIcon from '@material-ui/icons/Edit';
 import MergeType from '@material-ui/icons/MergeType';
 import SortIcon from '@material-ui/icons/Sort';
 import LayersIcon from '@material-ui/icons/Layers';
+import SwapHorizIcon from '@material-ui/icons/SwapHoriz';
 import DeleteIcon from '@material-ui/icons/Delete';
 import AddTokenDialog from './AddTokenDialog';
 import ExportAccountDialog from './ExportAccountDialog';
@@ -313,7 +314,7 @@ export default function BalancesList() {
                 color="primary"                           
                 onClick={() => {setSwap(true)}}
               >
-                <LayersIcon />
+                <SwapHorizIcon />
               </Button>            
             </Tooltip>
             <Typography style={actionButtons.buttonText}>Swap</Typography>       

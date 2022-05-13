@@ -703,7 +703,7 @@ function useForm(
         type="number"
         InputProps={{
           endAdornment: (
-            <InputAdornment position="end">
+            <InputAdornment position="end">              
               <Button
                 onClick={() =>
                   setTransferAmountString(
