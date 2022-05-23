@@ -355,7 +355,7 @@ function AmountForm({tokens, ownedTokens, update, refresh}){
   }, [tokens, refresh]);
 
   useEffect(() => {
-    async function fetchAccountInfo() {      
+    async function fetchAccountInfo() {          
       if(inToken){ 
         setMaxAmount(null);
         let uiAmount = null;        
@@ -364,8 +364,13 @@ function AmountForm({tokens, ownedTokens, update, refresh}){
           uiAmount = balance / LAMPORTS_PER_SOL;
         }
         else{
+          try{
           const data = await wallet.getTokenAmount(inToken.value);                
           uiAmount = data?data.uiAmount:0;
+          } catch (error){
+            uiAmount = 0;
+            console.debug(error);
+          }
         }                              
         setMaxAmount(uiAmount);
         update({inToken,outToken,amount,uiAmount})        
