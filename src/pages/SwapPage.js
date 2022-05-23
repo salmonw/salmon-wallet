@@ -153,13 +153,12 @@ export default function SwapPage() {
           USDC_MINT.toBase58(),
           WRAPPED_SOL_MINT.toBase58(),
           ...walletAccounts[0].map((w) => w.parsed.mint.toBase58())
-        ];        
-        const result = await Promise.all(
-          keys.map(async (tokenKey) => {                         
-            const {value, label, image,} = tokens.find(token => token.value === tokenKey);                                    
-            return {value, label, image};      
-          })
-        )
+        ];
+      
+        const result = keys
+          .map((tokenKey) => tokens.find(token => token.value === tokenKey))
+          .filter((t) => t != null);  
+        console.log(result);
         setOwnedTokens(result);        
       }
     }
@@ -358,20 +357,15 @@ function AmountForm({tokens, ownedTokens, update, refresh}){
     async function fetchAccountInfo() {          
       if(inToken){ 
         setMaxAmount(null);
-        let uiAmount = null;        
+        let uiAmount = null;                        
         if(inToken.value == WRAPPED_SOL_MINT.toBase58()){
           const balance = await connection.getBalance(wallet.publicKey);
           uiAmount = balance / LAMPORTS_PER_SOL;
         }
         else{
-          try{
           const data = await wallet.getTokenAmount(inToken.value);                
-          uiAmount = data?data.uiAmount:0;
-          } catch (error){
-            uiAmount = 0;
-            console.debug(error);
-          }
-        }                              
+          uiAmount = data?data.uiAmount:0;          
+        }                                     
         setMaxAmount(uiAmount);
         update({inToken,outToken,amount,uiAmount})        
       }
