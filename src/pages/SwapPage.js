@@ -233,10 +233,10 @@ export default function SwapPage() {
       console.log("before confirm: " + txid);
       try { 
           
-        const simulation = await connection.simulateTransaction(transaction, [wallet.provider.account])
-        console.log("Simulation result: " + JSON.stringify(simulation));      
+        //const simulation = await connection.simulateTransaction(transaction, [wallet.provider.account])
+        //console.log("Simulation result: " + JSON.stringify(simulation));      
         
-        /*const response = await connection.confirmTransaction(txid); */
+        const response = await connection.confirmTransaction(txid);
         cleanAll();
         refreshAccountInfo(connection, wallet.publicKey, true);
         setSuccess(true);                        
