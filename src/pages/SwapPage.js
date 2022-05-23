@@ -23,6 +23,9 @@ import {
   useWalletTokenAccounts
 } from '../utils/wallet';
 import {  
+  parseTokenAccountData
+} from '../utils/tokens/data';
+import {  
   refreshAccountInfo,  
 } from '../utils/connection';
 import {
@@ -36,7 +39,7 @@ import { randomBytes } from 'tweetnacl';
 import SearchIcon from '@material-ui/icons/Search';
 import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
 import { refreshCache, useAsyncData } from '../utils/fetch-loop';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { serumMarkets, priceStore } from '../utils/markets';
 
 
@@ -110,8 +113,8 @@ const connection = new Connection('https://solana-api.projectserum.com');
 //const connection = new Connection('https://ssc-dao.genesysgo.net');
 //const connection = new Connection('https://api.mainnet-beta.solana.com');
 const QUOTE_DURATION = 10;
-//const SALMON_API_URL = "https://xw314040mf.execute-api.us-east-1.amazonaws.com/develop";
-const SALMON_API_URL = "http://localhost:3000/local";
+const SALMON_API_URL = "https://xw314040mf.execute-api.us-east-1.amazonaws.com/develop";
+//const SALMON_API_URL = "http://localhost:3000/local";
 
 const getTokenByAddress = (address, tokens) => {
   const token = tokens.find((token) => token.value === address);
@@ -352,11 +355,18 @@ function AmountForm({tokens, ownedTokens, update, refresh}){
   }, [tokens, refresh]);
 
   useEffect(() => {
-    async function fetchAccountInfo() {
-      if(inToken){        
+    async function fetchAccountInfo() {      
+      if(inToken){ 
         setMaxAmount(null);
-        const data = await wallet.getTokenAmount(inToken.value);                
-        const uiAmount = data?data.uiAmount:0;
+        let uiAmount = null;        
+        if(inToken.value == WRAPPED_SOL_MINT.toBase58()){
+          const balance = await connection.getBalance(wallet.publicKey);
+          uiAmount = balance / LAMPORTS_PER_SOL;
+        }
+        else{
+          const data = await wallet.getTokenAmount(inToken.value);                
+          uiAmount = data?data.uiAmount:0;
+        }                              
         setMaxAmount(uiAmount);
         update({inToken,outToken,amount,uiAmount})        
       }

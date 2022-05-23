@@ -230,7 +230,7 @@ export default function BalancesList() {
 
   return (
     <>
-    <Paper style={{ display: allTokensLoaded ? "block" : "none" }}>
+    <Paper style={{ display: allTokensLoaded ? "block" : "block" }}>
       {/*
       <Menu
         selectedAccount={selectedAccount}
