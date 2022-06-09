@@ -51,6 +51,7 @@ import {
 import { useRegion } from '../utils/region';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { serumMarkets, priceStore } from '../utils/markets';
+import { priceService } from '../utils/price/PriceService';
 import { swapApiRequest } from '../utils/swap/api';
 import { showSwapAddress } from '../utils/config';
 import { useAsyncData } from '../utils/fetch-loop';
@@ -199,7 +200,7 @@ export default function BalancesList() {
       }
     },
     [publicKeys],
-  );
+  );  
   const balanceListItemsMemo = useMemo(() => {
     return sortedPublicKeys.map((pk) => {
       return React.memo((props) => {
@@ -415,21 +416,8 @@ export function BalanceListItem({ publicKey, expandable, setUsdValue }) {
           setPrice(1);
         }
         // A Serum market exists. Fetch the price.
-        else if (serumMarkets[coin]) {
-          let m = serumMarkets[coin];
-          priceStore
-            .getPrice(connection, m.name)
-            .then((price) => {
-              setPrice(price);
-            })
-            .catch((err) => {
-              console.error(err);
-              setPrice(null);
-            });
-        }
-        // No Serum market exists.
-        else {
-          setPrice(null);
+        else {          
+          priceService.getPriceBySymbol(coin).then((price) => setPrice(price));                    
         }
       }
       // No token symbol so don't fetch market data.

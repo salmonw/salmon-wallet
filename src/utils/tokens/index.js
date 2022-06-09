@@ -18,15 +18,16 @@ import {
 } from './instructions';
 import { ACCOUNT_LAYOUT, getOwnedAccountsFilters, MINT_LAYOUT } from './data';
 
-export async function getOwnedTokenAccounts(connection, publicKey) {
-  let filters = getOwnedAccountsFilters(publicKey);
-  let resp = await connection.getProgramAccounts(
-    TOKEN_PROGRAM_ID,
-    {
-      filters,
-    },
-  );
-  return resp
+export async function getOwnedTokenAccounts(connection, publicKey) {  
+  let filters = getOwnedAccountsFilters(publicKey);  
+  try{
+    let resp = await connection.getProgramAccounts(
+      TOKEN_PROGRAM_ID,
+      {
+        filters,
+      },
+    );    
+    return resp
     .map(({ pubkey, account: { data, executable, owner, lamports } }) => ({
       publicKey: new PublicKey(pubkey),
       accountInfo: {
@@ -36,6 +37,10 @@ export async function getOwnedTokenAccounts(connection, publicKey) {
         lamports,
       },
     }))
+  } catch(e) {
+    console.log("Error");
+    console.log(e);
+  }  
 }
 
 export async function signAndSendTransaction(

@@ -56,8 +56,8 @@ export class Wallet {
     return this.type === 'local';
   }
 
-  getTokenAccountInfo = async () => {
-    let accounts = await getOwnedTokenAccounts(this.connection, this.publicKey);
+  getTokenAccountInfo = async () => {    
+    let accounts = await getOwnedTokenAccounts(this.connection, this.publicKey);    
     return accounts
       .map(({ publicKey, accountInfo }) => {
         setInitialAccountInfo(this.connection, publicKey, accountInfo);
@@ -398,7 +398,7 @@ export function useWalletPublicKeys() {
     (oldKeys, newKeys) =>
       oldKeys.length === newKeys.length &&
       oldKeys.every((key, i) => key.equals(newKeys[i])),
-  );
+  );  
   return [publicKeys, loaded];
 }
 
@@ -431,11 +431,9 @@ export function useBalanceInfo(publicKey) {
     : {};
   let [mintInfo, mintInfoLoaded] = useAccountInfo(mint);
   let { name, symbol, logoUri } = useTokenInfo(mint);
-
   if (!accountInfoLoaded) {
     return null;
   }
-
   if (mint && mintInfoLoaded) {
     try {
       let { decimals } = parseMintData(mintInfo.data);
@@ -463,7 +461,7 @@ export function useBalanceInfo(publicKey) {
     }
   }
 
-  if (!mint) {
+  if (!mint || mint === undefined) {
     return {
       amount: accountInfo?.lamports ?? 0,
       decimals: 9,
