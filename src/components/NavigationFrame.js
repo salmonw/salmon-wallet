@@ -243,12 +243,12 @@ function NetworkSelector() {
           >
             <ListItemIcon className={classes.menuItemIcon}>
               {cluster.apiUrl === endpoint ? (
-                <CheckIcon fontSize="small" />
+                <CheckIcon style={{color:'green'}} fontSize="small" />
               ) : null}
             </ListItemIcon>
             {cluster.name === 'mainnet-beta-backup'
               ? 'Mainnet Beta Backup'
-              : cluster.apiUrl}
+              : cluster.label}
           </MenuItem>
         ))}
         <MenuItem

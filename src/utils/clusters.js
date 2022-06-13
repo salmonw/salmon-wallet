@@ -11,7 +11,7 @@ export const CLUSTERS = [
   {
     name: 'mainnet-beta-backup',
     apiUrl: MAINNET_BACKUP_URL,
-      label: 'Mainnet Beta Backup',
+    label: 'Mainnet Beta Backup',
     clusterSlug: 'mainnet-beta',
   },
   {
